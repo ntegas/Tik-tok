@@ -11,6 +11,7 @@ from agents.moderator import ModeratorAgent
 from agents.trend_researcher import TrendResearcherAgent
 from platforms.instagram import InstagramClient
 from platforms.manual_trends import ManualTrendSource
+from platforms.moneyprinter import MoneyPrinterClient
 from platforms.telegram import TelegramClient
 from platforms.tiktok import TikTokClient
 from platforms.youtube import YouTubeClient, YouTubeTrendSource
@@ -73,6 +74,20 @@ def publish_approved(platform: str) -> list:
             updated = storage.update_item(item["id"], status="publish_failed", failure_reason=str(exc))
         results.append(updated)
     return results
+
+
+def render_and_deliver_to_telegram(subject: str, script: str, language: str = "ru", caption: str = "") -> dict:
+    """Рендерит видео через MoneyPrinterTurbo и присылает готовый файл в Telegram."""
+    mpt = MoneyPrinterClient()
+    task_id = mpt.create_video(subject=subject, script=script, language=language)
+    task = mpt.wait_for_completion(task_id)
+    video_uri = task["videos"][0]
+
+    local_path = f"/tmp/{task_id}.mp4"
+    mpt.download(video_uri, local_path)
+
+    telegram = TelegramClient()
+    return telegram.send_video(local_path, caption=caption or subject)
 
 
 def summarize_published(platform: str) -> dict:

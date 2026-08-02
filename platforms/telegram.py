@@ -28,6 +28,25 @@ class TelegramClient(PlatformClient):
         result = self._call("sendMessage", chat_id=chat_id, text=text)
         return {"post_id": str(result["message_id"]), "url": None}
 
+    def send_video(self, file_path: str, caption: str = "", chat_id: str = None) -> dict:
+        """Отправляет готовый видеофайл (например, из MoneyPrinterClient.download())."""
+        if not TELEGRAM_BOT_TOKEN:
+            raise RuntimeError("TELEGRAM_BOT_TOKEN не задан в .env")
+        url = API_URL.format(token=TELEGRAM_BOT_TOKEN, method="sendVideo")
+        with open(file_path, "rb") as f:
+            resp = requests.post(
+                url,
+                data={"chat_id": chat_id or TELEGRAM_CHAT_ID, "caption": caption, "supports_streaming": True},
+                files={"video": f},
+                timeout=120,
+            )
+        resp.raise_for_status()
+        payload = resp.json()
+        if not payload.get("ok"):
+            raise RuntimeError(f"Telegram API error: {payload}")
+        result = payload["result"]
+        return {"post_id": str(result["message_id"]), "url": None}
+
     def get_comments(self, post_id: str) -> list:
         # Telegram Bot API не отдаёт комментарии к посту напрямую; для этого
         # нужен доступ к discussion group, привязанной к каналу, и getUpdates/webhook
