@@ -28,7 +28,7 @@ class MoneyPrinterClient:
         subject: str,
         script: str = "",
         language: str = "ru",
-        aspect: str = "portrait",
+        aspect: str = "9:16",
         voice_name: str = "",
         subtitle_enabled: bool = True,
     ) -> str:
