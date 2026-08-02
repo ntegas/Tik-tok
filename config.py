@@ -22,6 +22,12 @@ INSTAGRAM_BUSINESS_ACCOUNT_ID = os.environ.get("INSTAGRAM_BUSINESS_ACCOUNT_ID", 
 
 YOUTUBE_OAUTH_CLIENT_SECRETS_FILE = os.environ.get("YOUTUBE_OAUTH_CLIENT_SECRETS_FILE", "")
 
+# MoneyPrinterTurbo (external/MoneyPrinterTurbo) — отдельный сервис для рендера
+# видео (сценарий -> голос -> футаж -> субтитры -> сборка). Запускается своим
+# docker-compose, мы обращаемся к нему по HTTP.
+MONEYPRINTER_BASE_URL = os.environ.get("MONEYPRINTER_BASE_URL", "http://localhost:8080")
+MONEYPRINTER_API_KEY = os.environ.get("MONEYPRINTER_API_KEY", "")
+
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 STATE_FILE = os.path.join(DATA_DIR, "state.json")
 MANUAL_TRENDS_FILE = os.path.join(DATA_DIR, "manual_trends.json")

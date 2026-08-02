@@ -53,12 +53,29 @@ python scripts/run_pipeline.py analytics --platform telegram
 Для TikTok/Instagram: заполни `data/manual_trends.json` актуальными трендами
 вручную (пока нет доступа к их API трендов), дальше пайплайн работает так же.
 
+## Рендер видео (MoneyPrinterTurbo)
+
+Вместо своего монтажного движка используем готовый open-source сервис
+[MoneyPrinterTurbo](https://github.com/harry0703/MoneyPrinterTurbo) (MIT) —
+он умеет сценарий → голос (TTS) → футаж → субтитры (Whisper/Edge) → сборка
+видео. Подключён как git submodule в `external/MoneyPrinterTurbo`, мы его
+не форкаем и не копируем код — вызываем как отдельный сервис по HTTP.
+
+```bash
+git submodule update --init --recursive
+cd external/MoneyPrinterTurbo
+docker compose up -d   # поднимет API на :8080 и веб-интерфейс на :8501
+```
+
+Клиент к нему — `platforms/moneyprinter.py` (`MoneyPrinterClient`): создать
+задачу рендера, дождаться готовности, скачать файл. Пока не подключён к
+`orchestrator.py` — это следующий шаг, отдельно от текущего.
+
 ## Роадмап
 
 - **Фаза 1 (сейчас)**: искать тренды и предлагать похожий/такой же контент —
-  текстовые черновики (подпись, хэштеги, сценарий), без автогенерации видео.
-- **Фаза 2**: агент-монтажёр (`agents/video_editor.py`, пока не реализован) —
-  собирает полноценное видео из шаблонов/футажа по `shot_list`, используя
-  что-то вроде moviepy/ffmpeg.
+  текстовые черновики (подпись, хэштеги, сценарий).
+- **Фаза 2**: связать `orchestrator.py` с `MoneyPrinterClient`, чтобы черновик
+  автоматически превращался в готовый видеофайл.
 - **Фаза 3**: получить official API-доступ к TikTok Content Posting API и
   Instagram Graph API, включить реальную публикацию и обработку комментариев.
