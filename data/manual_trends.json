@@ -1,0 +1,16 @@
+{
+  "tiktok": [
+    {
+      "title": "Пример: заполни реальными трендами из вкладки \"В тренде\" в TikTok",
+      "source": "manual",
+      "meta": {"sound": "", "hashtags": []}
+    }
+  ],
+  "instagram": [
+    {
+      "title": "Пример: заполни реальными трендами из вкладки Reels в Instagram",
+      "source": "manual",
+      "meta": {"audio": "", "hashtags": []}
+    }
+  ]
+}
