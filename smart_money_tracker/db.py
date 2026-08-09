@@ -68,3 +68,54 @@ def replace_holdings(conn: sqlite3.Connection, filing_id: int, holdings: list[di
         """,
         [{**h, "filing_id": filing_id} for h in holdings],
     )
+
+
+def get_effective_filings(conn: sqlite3.Connection, investor_id: int) -> list[sqlite3.Row]:
+    """One filing per report period: the latest by filed_date (so a 13F-HR/A
+    amendment supersedes the original it corrects), ordered oldest -> newest
+    period. This is what quarter-over-quarter comparison should walk, per the
+    project's amendment caveat (see README)."""
+    return conn.execute(
+        """
+        SELECT f.* FROM filings f
+        INNER JOIN (
+            SELECT period, MAX(filed_date) AS max_filed_date
+            FROM filings WHERE investor_id = ?
+            GROUP BY period
+        ) latest ON f.period = latest.period AND f.filed_date = latest.max_filed_date
+        WHERE f.investor_id = ?
+        ORDER BY f.period ASC
+        """,
+        (investor_id, investor_id),
+    ).fetchall()
+
+
+def get_holdings(conn: sqlite3.Connection, filing_id: int) -> list[sqlite3.Row]:
+    return conn.execute("SELECT * FROM holdings WHERE filing_id = ?", (filing_id,)).fetchall()
+
+
+def set_holding_status(conn: sqlite3.Connection, holding_id: int, status: str, pct_change: float | None) -> None:
+    conn.execute(
+        "UPDATE holdings SET status = ?, pct_change = ? WHERE id = ?",
+        (status, pct_change, holding_id),
+    )
+
+
+def clear_synthetic_exits(conn: sqlite3.Connection, filing_id: int) -> None:
+    """Remove EXIT placeholder rows from a previous comparison run, so
+    re-running the comparison doesn't accumulate duplicates."""
+    conn.execute("DELETE FROM holdings WHERE filing_id = ? AND status = 'EXIT'", (filing_id,))
+
+
+def insert_exit_holding(conn: sqlite3.Connection, filing_id: int, cusip: str, ticker: str | None, issuer: str) -> None:
+    """A position held last period but absent this period doesn't appear in
+    the 13F at all (13F only reports current holdings) — insert a shares=0
+    placeholder row on the *current* filing so EXIT is visible without a
+    separate comparison table, per the holdings.status column in schema.sql."""
+    conn.execute(
+        """
+        INSERT INTO holdings (filing_id, cusip, ticker, issuer, shares, value, status, pct_change)
+        VALUES (?, ?, ?, ?, 0, 0, 'EXIT', -100.0)
+        """,
+        (filing_id, cusip, ticker, issuer),
+    )
