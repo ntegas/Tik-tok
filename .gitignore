@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 .venv/
 data/state.json
+smart_money_tracker/.env
+smart_money_tracker/data/*.db
